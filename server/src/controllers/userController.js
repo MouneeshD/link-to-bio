@@ -163,25 +163,48 @@ const updateMyProfile = async (req, res) => {
 
 const getPublicProfile = async (req, res) => {
   try {
-    const { username } = req.params;
+    const username = req.params.username
+      .trim()
+      .toLowerCase();
 
     const user = await User.findOne({
-      username: username.toLowerCase(),
-    }).select("-password -email");
+      username,
+    }).select(
+      "name username bio avatar"
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "Profile not found",
       });
     }
 
+    const Link = require("../models/Link");
+
+    const links = await Link.find({
+      user: user._id,
+      isActive: true,
+    })
+      .select("title url order")
+      .sort({ order: 1 });
+
     res.status(200).json({
       success: true,
-      user,
+      profile: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        bio: user.bio,
+        avatar: user.avatar,
+        links,
+      },
     });
   } catch (error) {
-    console.error("Get public profile error:", error);
+    console.error(
+      "Get public profile error:",
+      error
+    );
 
     res.status(500).json({
       success: false,

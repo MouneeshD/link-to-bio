@@ -1,12 +1,16 @@
 import api from "./api";
 
+// Get my profile
 export const getMyProfile = async () => {
   const response = await api.get("/users/me");
 
   return response.data;
 };
 
-export const updateMyProfile = async (profileData) => {
+// Update my profile
+export const updateMyProfile = async (
+  profileData
+) => {
   const response = await api.put(
     "/users/me",
     profileData
@@ -15,7 +19,10 @@ export const updateMyProfile = async (profileData) => {
   return response.data;
 };
 
-export const getPublicProfile = async (username) => {
+// Get public profile
+export const getPublicProfile = async (
+  username
+) => {
   const response = await api.get(
     `/users/${username}`
   );

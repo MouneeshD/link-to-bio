@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -28,10 +28,13 @@ const Dashboard = () => {
         <p>
         Username: @{user?.username}
         </p>
+        <div>
+        <Link to="/profile"> Edit Profile </Link>
+        </div>
 
-        <Link to="/profile">
-        Edit Profile
-        </Link>
+        <div>
+          <Link to="/links">Manage Links</Link>
+        </div>
 
       <button onClick={handleLogout}>
         Logout

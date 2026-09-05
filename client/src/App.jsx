@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Links from "./pages/Links";
+import PublicProfile from "./pages/PublicProfile";
 
 const App = () => {
   return (
@@ -30,6 +32,18 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+        path="/links"
+        element={
+          <ProtectedRoute>
+            <Links />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+          path="/:username"
+          element={<PublicProfile />}
+      />
       </Routes>
     </BrowserRouter>
   );
