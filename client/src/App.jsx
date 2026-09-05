@@ -7,6 +7,7 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Links from "./pages/Links";
 import PublicProfile from "./pages/PublicProfile";
+import Customize from "./pages/Customize";
 
 const App = () => {
   return (
@@ -37,6 +38,15 @@ const App = () => {
         element={
           <ProtectedRoute>
             <Links />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/customize"
+        element={
+          <ProtectedRoute>
+            <Customize />
           </ProtectedRoute>
         }
       />

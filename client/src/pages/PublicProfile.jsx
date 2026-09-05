@@ -1,29 +1,31 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import {
+  ExternalLink,
+  Link as LinkIcon,
+  User,
+} from "lucide-react";
 
 import { getPublicProfile } from "../services/userService";
+
+import "../styles/PublicProfile.css";
 
 const PublicProfile = () => {
   const { username } = useParams();
 
-  const [profile, setProfile] =
-    useState(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         setLoading(true);
         setError("");
+        setAvatarError(false);
 
-        const data =
-          await getPublicProfile(username);
+        const data = await getPublicProfile(username);
 
         setProfile(data.profile);
       } catch (error) {
@@ -44,154 +46,155 @@ const PublicProfile = () => {
     loadProfile();
   }, [username]);
 
-
-  // Loading
-
   if (loading) {
     return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "50px",
-        }}
-      >
-        Loading profile...
+      <div className="public-profile-page">
+        <div className="public-profile-loading">
+          <div className="public-profile-spinner"></div>
+          <p>Loading profile...</p>
+        </div>
       </div>
     );
   }
 
-
-  // Error
-
-  if (error) {
+  if (error || !profile) {
     return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "50px",
-        }}
-      >
-        <h1>Profile not found</h1>
+      <div className="public-profile-page">
+        <div className="public-profile-error">
+          <div className="error-icon">
+            <User size={28} />
+          </div>
 
-        <p>{error}</p>
+          <h1>Profile not found</h1>
+
+          <p>
+            {error ||
+              "This profile does not exist."}
+          </p>
+        </div>
       </div>
     );
   }
 
+  // Get customization settings
+  const customization = {
+    backgroundColor:
+      profile.customization?.backgroundColor ||
+      "#ffffff",
 
-  // Profile
+    buttonStyle:
+      profile.customization?.buttonStyle ||
+      "rounded",
+
+    theme:
+      profile.customization?.theme ||
+      "light",
+  };
+
+  const isDark =
+    customization.theme === "dark";
+
+  const initial =
+    profile.name?.charAt(0)?.toUpperCase() ||
+    "U";
+
+  const getButtonRadius = () => {
+    switch (customization.buttonStyle) {
+      case "square":
+        return "4px";
+
+      case "pill":
+        return "999px";
+
+      case "rounded":
+      default:
+        return "12px";
+    }
+  };
 
   return (
     <div
+      className={`public-profile-page ${
+        isDark ? "public-profile-dark" : ""
+      }`}
       style={{
-        minHeight: "100vh",
-        padding: "40px 20px",
-        background: "#f5f5f5",
+        backgroundColor:
+          customization.backgroundColor,
       }}
     >
-      <div
-        style={{
-          maxWidth: "600px",
-          margin: "0 auto",
-          textAlign: "center",
-        }}
-      >
-
-        {/* AVATAR */}
-
-        {profile.avatar ? (
-          <img
-            src={profile.avatar}
-            alt={profile.name}
-            style={{
-              width: "100px",
-              height: "100px",
-              borderRadius: "50%",
-              objectFit: "cover",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100px",
-              height: "100px",
-              borderRadius: "50%",
-              background: "#ddd",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto",
-              fontSize: "40px",
-            }}
-          >
-            {profile.name
-              ?.charAt(0)
-              ?.toUpperCase()}
+      <main className="public-profile-container">
+        {/* PROFILE HEADER */}
+        <section className="public-profile-header">
+          <div className="public-avatar">
+            {profile.avatar &&
+            !avatarError ? (
+              <img
+                src={profile.avatar}
+                alt={profile.name}
+                onError={() =>
+                  setAvatarError(true)
+                }
+              />
+            ) : (
+              initial
+            )}
           </div>
-        )}
 
+          <h1>{profile.name}</h1>
 
-        {/* NAME */}
-
-        <h1>
-          {profile.name}
-        </h1>
-
-
-        {/* USERNAME */}
-
-        <p>
-          @{profile.username}
-        </p>
-
-
-        {/* BIO */}
-
-        {profile.bio && (
-          <p
-            style={{
-              marginBottom: "30px",
-            }}
-          >
-            {profile.bio}
+          <p className="public-username">
+            @{profile.username}
           </p>
-        )}
 
+          {profile.bio && (
+            <p className="public-bio">
+              {profile.bio}
+            </p>
+          )}
+        </section>
 
         {/* LINKS */}
-
-        <div>
+        <section className="public-links">
           {profile.links.length === 0 ? (
-            <p>
-              No links available.
-            </p>
-          ) : (
-            profile.links.map(
-              (link) => (
-                <a
-                  key={link._id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "block",
-                    padding: "16px",
-                    marginBottom: "12px",
-                    background: "#fff",
-                    color: "#111",
-                    textDecoration: "none",
-                    borderRadius: "10px",
-                    fontWeight: "600",
-                  }}
-                >
-                  {link.title}
-                </a>
-              )
-            )
-          )}
-        </div>
+            <div className="no-links">
+              <LinkIcon size={22} />
 
-      </div>
+              <p>No links available yet.</p>
+            </div>
+          ) : (
+            profile.links.map((link) => (
+              <a
+                key={link._id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="public-link"
+                style={{
+                  borderRadius:
+                    getButtonRadius(),
+                }}
+              >
+                <span className="public-link-title">
+                  {link.title}
+                </span>
+
+                <ExternalLink
+                  size={17}
+                  className="public-link-icon"
+                />
+              </a>
+            ))
+          )}
+        </section>
+
+        {/* FOOTER */}
+        <footer className="public-profile-footer">
+          <span>
+            <LinkIcon size={14} />
+            Link-in-Bio
+          </span>
+        </footer>
+      </main>
     </div>
   );
 };

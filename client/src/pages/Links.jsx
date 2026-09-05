@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
-
 import {
   DndContext,
   closestCenter,
 } from "@dnd-kit/core";
-
 import {
   arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-
 import { CSS } from "@dnd-kit/utilities";
+import {
+  GripVertical,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Plus,
+  ExternalLink,
+  Save,
+  X,
+  Link as LinkIcon,
+} from "lucide-react";
 
 import {
   getMyLinks,
@@ -21,7 +30,9 @@ import {
   deleteLink,
   reorderLinks,
 } from "../services/linkService";
+import BackButton from "../components/BackButton";
 
+import "../styles/Links.css";
 
 // ========================================
 // SORTABLE LINK ITEM
@@ -46,6 +57,7 @@ const SortableLink = ({
     setNodeRef,
     transform,
     transition,
+    isDragging,
   } = useSortable({
     id: link._id,
   });
@@ -53,11 +65,7 @@ const SortableLink = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    border: "1px solid #ddd",
-    padding: "15px",
-    marginBottom: "10px",
-    borderRadius: "8px",
-    background: "#fff",
+    zIndex: isDragging ? 10 : "auto",
   };
 
   const isEditing = editingId === link._id;
@@ -66,161 +74,162 @@ const SortableLink = ({
     <div
       ref={setNodeRef}
       style={style}
+      className={`link-item ${
+        isDragging ? "link-item-dragging" : ""
+      } ${!link.isActive ? "link-item-disabled" : ""}`}
     >
       {/* DRAG HANDLE */}
-
-      <div
+      <button
+        type="button"
+        className="drag-handle"
         {...attributes}
         {...listeners}
-        style={{
-          cursor: "grab",
-          marginBottom: "10px",
-          fontWeight: "bold",
-        }}
+        title="Drag to reorder"
       >
-        ☰ Drag
-      </div>
-
+        <GripVertical size={20} />
+      </button>
 
       {isEditing ? (
-        <>
-          {/* EDIT TITLE */}
-
-          <div
-            style={{
-              marginBottom: "10px",
-            }}
-          >
-            <label>
-              Title
+        /* =========================
+           EDIT MODE
+        ========================== */
+        <div className="link-edit-form">
+          <div className="form-field">
+            <label htmlFor={`title-${link._id}`}>
+              Link Title
             </label>
 
-            <br />
-
             <input
+              id={`title-${link._id}`}
               type="text"
               value={editTitle}
               onChange={(e) =>
                 setEditTitle(e.target.value)
               }
-              style={{
-                width: "100%",
-                padding: "10px",
-              }}
+              placeholder="Instagram"
             />
           </div>
 
-
-          {/* EDIT URL */}
-
-          <div
-            style={{
-              marginBottom: "10px",
-            }}
-          >
-            <label>
+          <div className="form-field">
+            <label htmlFor={`url-${link._id}`}>
               URL
             </label>
 
-            <br />
-
             <input
+              id={`url-${link._id}`}
               type="url"
               value={editUrl}
               onChange={(e) =>
                 setEditUrl(e.target.value)
               }
-              style={{
-                width: "100%",
-                padding: "10px",
-              }}
+              placeholder="https://instagram.com/username"
             />
           </div>
 
+          <div className="edit-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() =>
+                onSaveEdit(link._id)
+              }
+            >
+              <Save size={16} />
+              Save Changes
+            </button>
 
-          {/* SAVE */}
-
-          <button
-            onClick={() =>
-              onSaveEdit(link._id)
-            }
-          >
-            Save
-          </button>
-
-
-          {/* CANCEL */}
-
-          <button
-            onClick={onCancelEdit}
-            style={{
-              marginLeft: "10px",
-            }}
-          >
-            Cancel
-          </button>
-        </>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onCancelEdit}
+            >
+              <X size={16} />
+              Cancel
+            </button>
+          </div>
+        </div>
       ) : (
-        <>
-          {/* NORMAL VIEW */}
+        /* =========================
+           NORMAL MODE
+        ========================== */
+        <div className="link-content">
+          <div className="link-main">
+            <div className="link-icon">
+              <LinkIcon size={20} />
+            </div>
 
-          <h3>{link.title}</h3>
+            <div className="link-info">
+              <div className="link-title-row">
+                <h3>{link.title}</h3>
 
-          <p>
-            {link.url}
-          </p>
+                <span
+                  className={`link-status ${
+                    link.isActive
+                      ? "status-active"
+                      : "status-disabled"
+                  }`}
+                >
+                  {link.isActive
+                    ? "Active"
+                    : "Disabled"}
+                </span>
+              </div>
 
-          <p>
-            Status:{" "}
-            {link.isActive
-              ? "Active"
-              : "Disabled"}
-          </p>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-url"
+              >
+                {link.url}
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
 
+          <div className="link-actions">
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => onEdit(link)}
+              title="Edit link"
+            >
+              <Pencil size={17} />
+            </button>
 
-          {/* EDIT */}
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => onToggle(link)}
+              title={
+                link.isActive
+                  ? "Disable link"
+                  : "Enable link"
+              }
+            >
+              {link.isActive ? (
+                <EyeOff size={17} />
+              ) : (
+                <Eye size={17} />
+              )}
+            </button>
 
-          <button
-            onClick={() => onEdit(link)}
-          >
-            Edit
-          </button>
-
-
-          {/* ENABLE / DISABLE */}
-
-          <button
-            onClick={() =>
-              onToggle(link)
-            }
-            style={{
-              marginLeft: "10px",
-            }}
-          >
-            {link.isActive
-              ? "Disable"
-              : "Enable"}
-          </button>
-
-
-          {/* DELETE */}
-
-          <button
-            onClick={() =>
-              onDelete(link._id)
-            }
-            style={{
-              marginLeft: "10px",
-            }}
-          >
-            Delete
-          </button>
-        </>
+            <button
+              type="button"
+              className="icon-button danger"
+              onClick={() =>
+                onDelete(link._id)
+              }
+              title="Delete link"
+            >
+              <Trash2 size={17} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
 };
-
 
 // ========================================
 // LINKS PAGE
@@ -236,15 +245,9 @@ const Links = () => {
   const [saving, setSaving] = useState(false);
 
   // Edit state
-  const [editingId, setEditingId] =
-    useState(null);
-
-  const [editTitle, setEditTitle] =
-    useState("");
-
-  const [editUrl, setEditUrl] =
-    useState("");
-
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
 
   // ========================================
   // LOAD LINKS
@@ -252,6 +255,8 @@ const Links = () => {
 
   const loadLinks = async () => {
     try {
+      setLoading(true);
+
       const data = await getMyLinks();
 
       setLinks(data.links || []);
@@ -265,11 +270,9 @@ const Links = () => {
     }
   };
 
-
   useEffect(() => {
     loadLinks();
   }, []);
-
 
   // ========================================
   // ADD LINK
@@ -278,10 +281,7 @@ const Links = () => {
   const handleAddLink = async (e) => {
     e.preventDefault();
 
-    if (
-      !title.trim() ||
-      !url.trim()
-    ) {
+    if (!title.trim() || !url.trim()) {
       return;
     }
 
@@ -289,8 +289,8 @@ const Links = () => {
       setSaving(true);
 
       const data = await createLink({
-        title,
-        url,
+        title: title.trim(),
+        url: url.trim(),
       });
 
       setLinks((prev) => [
@@ -310,7 +310,6 @@ const Links = () => {
     }
   };
 
-
   // ========================================
   // START EDITING
   // ========================================
@@ -321,7 +320,6 @@ const Links = () => {
     setEditUrl(link.url);
   };
 
-
   // ========================================
   // CANCEL EDIT
   // ========================================
@@ -331,7 +329,6 @@ const Links = () => {
     setEditTitle("");
     setEditUrl("");
   };
-
 
   // ========================================
   // SAVE EDIT
@@ -347,8 +344,8 @@ const Links = () => {
 
     try {
       const data = await updateLink(id, {
-        title: editTitle,
-        url: editUrl,
+        title: editTitle.trim(),
+        url: editUrl.trim(),
       });
 
       setLinks((prev) =>
@@ -367,7 +364,6 @@ const Links = () => {
       );
     }
   };
-
 
   // ========================================
   // ENABLE / DISABLE
@@ -397,16 +393,14 @@ const Links = () => {
     }
   };
 
-
   // ========================================
   // DELETE LINK
   // ========================================
 
   const handleDelete = async (id) => {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this link?"
-      );
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this link?"
+    );
 
     if (!confirmed) {
       return;
@@ -417,8 +411,7 @@ const Links = () => {
 
       setLinks((prev) =>
         prev.filter(
-          (link) =>
-            link._id !== id
+          (link) => link._id !== id
         )
       );
     } catch (error) {
@@ -428,7 +421,6 @@ const Links = () => {
       );
     }
   };
-
 
   // ========================================
   // DRAG END
@@ -444,17 +436,13 @@ const Links = () => {
       return;
     }
 
-    const oldIndex =
-      links.findIndex(
-        (link) =>
-          link._id === active.id
-      );
+    const oldIndex = links.findIndex(
+      (link) => link._id === active.id
+    );
 
-    const newIndex =
-      links.findIndex(
-        (link) =>
-          link._id === over.id
-      );
+    const newIndex = links.findIndex(
+      (link) => link._id === over.id
+    );
 
     if (
       oldIndex === -1 ||
@@ -473,11 +461,9 @@ const Links = () => {
 
     try {
       await reorderLinks(
-        newLinks.map(
-          (link) => ({
-            id: link._id,
-          })
-        )
+        newLinks.map((link) => ({
+          id: link._id,
+        }))
       );
     } catch (error) {
       console.error(
@@ -489,167 +475,202 @@ const Links = () => {
     }
   };
 
-
   // ========================================
   // LOADING
   // ========================================
 
   if (loading) {
     return (
-      <p>
-        Loading links...
-      </p>
+      <div className="links-page">
+        <div className="links-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading your links...</p>
+        </div>
+      </div>
     );
   }
-
 
   // ========================================
   // UI
   // ========================================
 
   return (
-    <div
-      style={{
-        maxWidth: "700px",
-        margin: "0 auto",
-        padding: "20px",
-      }}
-    >
-      <h1>
-        My Links
-      </h1>
+    <div className="links-page">
+        <BackButton fallback="/dashboard" />
+      {/* =========================
+          HEADER
+      ========================== */}
+      <header className="links-header">
+        <div>
+          <p className="links-eyebrow">
+            LINK MANAGEMENT
+          </p>
 
+          <h1>My Links</h1>
 
-      {/* ADD LINK FORM */}
-
-      <form
-        onSubmit={handleAddLink}
-        style={{
-          marginBottom: "30px",
-        }}
-      >
-        <div
-          style={{
-            marginBottom: "15px",
-          }}
-        >
-          <label>
-            Title
-          </label>
-
-          <br />
-
-          <input
-            type="text"
-            value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
-            }
-            placeholder="My Instagram"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          />
+          <p className="links-subtitle">
+            Add and organize the links you want
+            to share with your audience.
+          </p>
         </div>
 
+        <div className="links-count">
+          <strong>{links.length}</strong>
+          <span>
+            {links.length === 1
+              ? "Link"
+              : "Links"}
+          </span>
+        </div>
+      </header>
 
-        <div
-          style={{
-            marginBottom: "15px",
-          }}
-        >
-          <label>
-            URL
-          </label>
+      {/* =========================
+          ADD LINK CARD
+      ========================== */}
+      <section className="add-link-card">
+        <div className="add-link-heading">
+          <div className="add-link-icon">
+            <Plus size={22} />
+          </div>
 
-          <br />
+          <div>
+            <h2>Add a new link</h2>
 
-          <input
-            type="url"
-            value={url}
-            onChange={(e) =>
-              setUrl(e.target.value)
-            }
-            placeholder="https://instagram.com/username"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          />
+            <p>
+              Add a website, social profile,
+              portfolio or anything you want
+              to share.
+            </p>
+          </div>
         </div>
 
-
-        <button
-          type="submit"
-          disabled={saving}
+        <form
+          onSubmit={handleAddLink}
+          className="add-link-form"
         >
-          {saving
-            ? "Adding..."
-            : "Add Link"}
-        </button>
-      </form>
+          <div className="form-field">
+            <label htmlFor="link-title">
+              Link Title
+            </label>
 
+            <input
+              id="link-title"
+              type="text"
+              value={title}
+              onChange={(e) =>
+                setTitle(e.target.value)
+              }
+              placeholder="My Instagram"
+            />
+          </div>
 
-      <hr />
+          <div className="form-field">
+            <label htmlFor="link-url">
+              URL
+            </label>
 
+            <input
+              id="link-url"
+              type="url"
+              value={url}
+              onChange={(e) =>
+                setUrl(e.target.value)
+              }
+              placeholder="https://instagram.com/username"
+            />
+          </div>
 
-      {/* LINKS LIST */}
-
-      {links.length === 0 ? (
-        <p>
-          No links yet.
-          Add your first link!
-        </p>
-      ) : (
-        <DndContext
-          collisionDetection={
-            closestCenter
-          }
-          onDragEnd={
-            handleDragEnd
-          }
-        >
-          <SortableContext
-            items={links.map(
-              (link) =>
-                link._id
-            )}
-            strategy={
-              verticalListSortingStrategy
+          <button
+            type="submit"
+            className="add-link-button"
+            disabled={
+              saving ||
+              !title.trim() ||
+              !url.trim()
             }
           >
-            {links.map((link) => (
-              <SortableLink
-                key={link._id}
-                link={link}
-                editingId={editingId}
-                editTitle={editTitle}
-                editUrl={editUrl}
-                setEditTitle={
-                  setEditTitle
-                }
-                setEditUrl={
-                  setEditUrl
-                }
-                onEdit={handleEdit}
-                onSaveEdit={
-                  handleSaveEdit
-                }
-                onCancelEdit={
-                  handleCancelEdit
-                }
-                onToggle={
-                  handleToggle
-                }
-                onDelete={
-                  handleDelete
-                }
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+            <Plus size={18} />
+
+            {saving
+              ? "Adding..."
+              : "Add Link"}
+          </button>
+        </form>
+      </section>
+
+      {/* =========================
+          LINKS LIST
+      ========================== */}
+      <section className="links-list-section">
+        <div className="list-heading">
+          <div>
+            <h2>Your links</h2>
+
+            <p>
+              Drag and drop to change their
+              order.
+            </p>
+          </div>
+        </div>
+
+        {links.length === 0 ? (
+          <div className="empty-links">
+            <div className="empty-icon">
+              <LinkIcon size={28} />
+            </div>
+
+            <h3>No links yet</h3>
+
+            <p>
+              Add your first link above to
+              start building your profile.
+            </p>
+          </div>
+        ) : (
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={links.map(
+                (link) => link._id
+              )}
+              strategy={
+                verticalListSortingStrategy
+              }
+            >
+              <div className="links-list">
+                {links.map((link) => (
+                  <SortableLink
+                    key={link._id}
+                    link={link}
+                    editingId={editingId}
+                    editTitle={editTitle}
+                    editUrl={editUrl}
+                    setEditTitle={
+                      setEditTitle
+                    }
+                    setEditUrl={setEditUrl}
+                    onEdit={handleEdit}
+                    onSaveEdit={
+                      handleSaveEdit
+                    }
+                    onCancelEdit={
+                      handleCancelEdit
+                    }
+                    onToggle={
+                      handleToggle
+                    }
+                    onDelete={
+                      handleDelete
+                    }
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </section>
     </div>
   );
 };
